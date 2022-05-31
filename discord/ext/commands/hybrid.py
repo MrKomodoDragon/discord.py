@@ -235,14 +235,13 @@ def replace_parameter(
         elif is_converter(converter) or converter in CONVERTER_MAPPING:
             param = param.replace(annotation=make_converter_transformer(converter, original))
         elif origin is Union:
-            if len(args) == 2 and args[-1] is _NoneType:
-                # Special case Optional[X] where X is a single type that can optionally be a converter
-                inner = args[0]
-                is_inner_tranformer = is_transformer(inner)
-                if is_converter(inner) and not is_inner_tranformer:
-                    param = param.replace(annotation=Optional[make_converter_transformer(inner, original)])  # type: ignore
-            else:
+            if len(args) != 2 or args[-1] is not _NoneType:
                 raise
+            # Special case Optional[X] where X is a single type that can optionally be a converter
+            inner = args[0]
+            is_inner_tranformer = is_transformer(inner)
+            if is_converter(inner) and not is_inner_tranformer:
+                param = param.replace(annotation=Optional[make_converter_transformer(inner, original)])  # type: ignore
         elif origin:
             # Unsupported typing.X annotation e.g. typing.Dict, typing.Tuple, typing.List, etc.
             raise
@@ -330,13 +329,12 @@ class HybridAppCommand(discord.app_commands.Command[CogT, P, T]):
             try:
                 value = values[param.display_name]
             except KeyError:
-                if not param.required:
-                    if isinstance(param.default, _CallableDefault):
-                        transformed_values[param.name] = await maybe_coroutine(param.default.func, interaction._baton)
-                    else:
-                        transformed_values[param.name] = param.default
-                else:
+                if param.required:
                     raise app_commands.CommandSignatureMismatch(self) from None
+                if isinstance(param.default, _CallableDefault):
+                    transformed_values[param.name] = await maybe_coroutine(param.default.func, interaction._baton)
+                else:
+                    transformed_values[param.name] = param.default
             else:
                 transformed_values[param.name] = await param.transform(interaction, value)
 
@@ -374,14 +372,14 @@ class HybridAppCommand(discord.app_commands.Command[CogT, P, T]):
         if not await bot.can_run(ctx):
             return False
 
-        if self.parent is not None and self.parent is not self.binding:
-            # For commands with a parent which isn't the binding, i.e.
-            # <binding>
-            #     <parent>
-            #         <command>
-            # The parent check needs to be called first
-            if not await maybe_coroutine(self.parent.interaction_check, interaction):
-                return False
+        if (
+            self.parent is not None
+            and self.parent is not self.binding
+            and not await maybe_coroutine(
+                self.parent.interaction_check, interaction
+            )
+        ):
+            return False
 
         if self.binding is not None:
             try:
@@ -627,8 +625,7 @@ class HybridGroup(Group[CogT, P, T]):
     @cog.setter
     def cog(self, value: CogT) -> None:
         self._cog = value
-        fallback = self._fallback_command
-        if fallback:
+        if fallback := self._fallback_command:
             fallback.binding = value
 
     async def can_run(self, ctx: Context[BotT], /) -> bool:

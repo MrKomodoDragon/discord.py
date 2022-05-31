@@ -361,11 +361,7 @@ class SelectOption:
         )
 
     def __str__(self) -> str:
-        if self.emoji:
-            base = f'{self.emoji} {self.label}'
-        else:
-            base = self.label
-
+        base = f'{self.emoji} {self.label}' if self.emoji else self.label
         if self.description:
             return f'{base}\n{self.description}'
         return base
@@ -377,15 +373,15 @@ class SelectOption:
 
     @emoji.setter
     def emoji(self, value: Optional[Union[str, Emoji, PartialEmoji]]) -> None:
-        if value is not None:
-            if isinstance(value, str):
-                self._emoji = PartialEmoji.from_str(value)
-            elif isinstance(value, _EmojiTag):
-                self._emoji = value._to_partial()
-            else:
-                raise TypeError(f'expected str, Emoji, or PartialEmoji, received {value.__class__} instead')
-        else:
+        if value is None:
             self._emoji = None
+
+        elif isinstance(value, str):
+            self._emoji = PartialEmoji.from_str(value)
+        elif isinstance(value, _EmojiTag):
+            self._emoji = value._to_partial()
+        else:
+            raise TypeError(f'expected str, Emoji, or PartialEmoji, received {value.__class__} instead')
 
     @classmethod
     def from_dict(cls, data: SelectOptionPayload) -> SelectOption:

@@ -882,10 +882,14 @@ class Guild(Hashable):
 
         .. versionadded:: 1.6
         """
-        for role in self._roles.values():
-            if role.is_premium_subscriber():
-                return role
-        return None
+        return next(
+            (
+                role
+                for role in self._roles.values()
+                if role.is_premium_subscriber()
+            ),
+            None,
+        )
 
     @property
     def self_role(self) -> Optional[Role]:
@@ -1173,12 +1177,15 @@ class Guild(Hashable):
                 raise TypeError(f'Expected PermissionOverwrite received {perm.__class__.__name__}')
 
             allow, deny = perm.pair()
-            payload = {'allow': allow.value, 'deny': deny.value, 'id': target.id}
+            payload = {
+                'allow': allow.value,
+                'deny': deny.value,
+                'id': target.id,
+                'type': abc._Overwrites.ROLE
+                if isinstance(target, Role)
+                else abc._Overwrites.MEMBER,
+            }
 
-            if isinstance(target, Role):
-                payload['type'] = abc._Overwrites.ROLE
-            else:
-                payload['type'] = abc._Overwrites.MEMBER
 
             perms.append(payload)
 
