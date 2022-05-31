@@ -1720,7 +1720,7 @@ class Message(PartialMessage, Hashable):
                 return '@deleted-role'
 
             def resolve_channel(id: int) -> str:
-                return f'#deleted-channel'
+                return '#deleted-channel'
 
         transforms = {
             '@': resolve_member,
@@ -1732,8 +1732,7 @@ class Message(PartialMessage, Hashable):
         def repl(match: re.Match) -> str:
             type = match[1]
             id = int(match[2])
-            transformed = transforms[type](id)
-            return transformed
+            return transforms[type](id)
 
         result = re.sub(r'<(@[!&]?|#)([0-9]{15,20})>', repl, self.content)
 
@@ -1820,28 +1819,32 @@ class Message(PartialMessage, Hashable):
             return formats[created_at_ms % len(formats)].format(self.author.name)
 
         if self.type is MessageType.premium_guild_subscription:
-            if not self.content:
-                return f'{self.author.name} just boosted the server!'
-            else:
-                return f'{self.author.name} just boosted the server **{self.content}** times!'
+            return (
+                f'{self.author.name} just boosted the server **{self.content}** times!'
+                if self.content
+                else f'{self.author.name} just boosted the server!'
+            )
 
         if self.type is MessageType.premium_guild_tier_1:
-            if not self.content:
-                return f'{self.author.name} just boosted the server! {self.guild} has achieved **Level 1!**'
-            else:
-                return f'{self.author.name} just boosted the server **{self.content}** times! {self.guild} has achieved **Level 1!**'
+            return (
+                f'{self.author.name} just boosted the server **{self.content}** times! {self.guild} has achieved **Level 1!**'
+                if self.content
+                else f'{self.author.name} just boosted the server! {self.guild} has achieved **Level 1!**'
+            )
 
         if self.type is MessageType.premium_guild_tier_2:
-            if not self.content:
-                return f'{self.author.name} just boosted the server! {self.guild} has achieved **Level 2!**'
-            else:
-                return f'{self.author.name} just boosted the server **{self.content}** times! {self.guild} has achieved **Level 2!**'
+            return (
+                f'{self.author.name} just boosted the server **{self.content}** times! {self.guild} has achieved **Level 2!**'
+                if self.content
+                else f'{self.author.name} just boosted the server! {self.guild} has achieved **Level 2!**'
+            )
 
         if self.type is MessageType.premium_guild_tier_3:
-            if not self.content:
-                return f'{self.author.name} just boosted the server! {self.guild} has achieved **Level 3!**'
-            else:
-                return f'{self.author.name} just boosted the server **{self.content}** times! {self.guild} has achieved **Level 3!**'
+            return (
+                f'{self.author.name} just boosted the server **{self.content}** times! {self.guild} has achieved **Level 3!**'
+                if self.content
+                else f'{self.author.name} just boosted the server! {self.guild} has achieved **Level 3!**'
+            )
 
         if self.type is MessageType.channel_follow_add:
             return (

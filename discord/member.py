@@ -541,8 +541,7 @@ class Member(discord.abc.Messageable, _UserTag):
         result = []
         g = self.guild
         for role_id in self._roles:
-            role = g.get_role(role_id)
-            if role:
+            if role := g.get_role(role_id):
                 result.append(role)
         result.append(g.default_role)
         result.sort()
@@ -558,8 +557,7 @@ class Member(discord.abc.Messageable, _UserTag):
 
         roles = self.roles[1:]  # remove @everyone
         for role in reversed(roles):
-            icon = role.display_icon
-            if icon:
+            if icon := role.display_icon:
                 return icon
 
         return None
@@ -697,9 +695,7 @@ class Member(discord.abc.Messageable, _UserTag):
 
         .. versionadded:: 2.0
         """
-        if self._permissions is None:
-            return None
-        return Permissions(self._permissions)
+        return None if self._permissions is None else Permissions(self._permissions)
 
     @property
     def voice(self) -> Optional[VoiceState]:
@@ -861,11 +857,11 @@ class Member(discord.abc.Messageable, _UserTag):
         if timed_out_until is not MISSING:
             if timed_out_until is None:
                 payload['communication_disabled_until'] = None
+            elif timed_out_until.tzinfo is None:
+                raise TypeError(
+                    'timed_out_until must be an aware datetime. Consider using discord.utils.utcnow() or datetime.datetime.now().astimezone() for local time.'
+                )
             else:
-                if timed_out_until.tzinfo is None:
-                    raise TypeError(
-                        'timed_out_until must be an aware datetime. Consider using discord.utils.utcnow() or datetime.datetime.now().astimezone() for local time.'
-                    )
                 payload['communication_disabled_until'] = timed_out_until.isoformat()
 
         if payload:

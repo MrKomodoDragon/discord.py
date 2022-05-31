@@ -644,11 +644,10 @@ class SyncWebhook(BaseWebhook):
         }
         import requests
 
-        if session is not MISSING:
-            if not isinstance(session, requests.Session):
-                raise TypeError(f'expected requests.Session not {session.__class__!r}')
-        else:
+        if session is MISSING:
             session = requests  # type: ignore
+        elif not isinstance(session, requests.Session):
+            raise TypeError(f'expected requests.Session not {session.__class__!r}')
         return cls(data, session, token=bot_token)
 
     @classmethod
@@ -687,11 +686,10 @@ class SyncWebhook(BaseWebhook):
         data['type'] = 1
         import requests
 
-        if session is not MISSING:
-            if not isinstance(session, requests.Session):
-                raise TypeError(f'expected requests.Session not {session.__class__!r}')
-        else:
+        if session is MISSING:
             session = requests  # type: ignore
+        elif not isinstance(session, requests.Session):
+            raise TypeError(f'expected requests.Session not {session.__class__!r}')
         return cls(data, session, token=bot_token)  # type: ignore
 
     def fetch(self, *, prefer_auth: bool = True) -> SyncWebhook:
@@ -994,11 +992,7 @@ class SyncWebhook(BaseWebhook):
         if content is None:
             content = MISSING
 
-        if suppress_embeds:
-            flags = MessageFlags._from_value(4)
-        else:
-            flags = MISSING
-
+        flags = MessageFlags._from_value(4) if suppress_embeds else MISSING
         if thread_name is not MISSING and thread is not MISSING:
             raise TypeError('Cannot mix thread_name and thread keyword arguments.')
 
